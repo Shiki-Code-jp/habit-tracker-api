@@ -30,3 +30,4 @@
 /home/user/projects/pro/habit-tracker-api/obj/Debug/net8.0/habit-tracker-api.pdb
 /home/user/projects/pro/habit-tracker-api/obj/Debug/net8.0/habit-tracker-api.genruntimeconfig.cache
 /home/user/projects/pro/habit-tracker-api/obj/Debug/net8.0/ref/habit-tracker-api.dll
+/home/user/projects/pro/habit-tracker-api/obj/Debug/net8.0/habit-tracker-api.sourcelink.json
