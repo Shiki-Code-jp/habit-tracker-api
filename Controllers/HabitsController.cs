@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using habit_tracker_api.Data;
 using habit_tracker_api.Models;
 
 namespace habit_tracker_api.Controllers;
@@ -7,16 +9,26 @@ namespace habit_tracker_api.Controllers;
 [Route("api/[controller]")]
 public class HabitController : ControllerBase
 {
-    private static readonly List<Habit> DummyHabits = new()
+    private readonly AppDbContext _context;
+
+    public HabitController(AppDbContext context)
     {
-        new Habit { Id = 1, Title = "C#の勉強", Description = "Web APIの作成を1時間進める", IsCompleted = false },
-        new Habit { Id = 2, Title = "運動", Description = "20分間散歩する", IsCompleted = false }
-    };
+        _context = context;
+    }
 
     [HttpGet]
-    public ActionResult<IEnumerable<Habit>> GetHabits()
+    public async Task<ActionResult<IEnumerable<Habit>>> GetHabits()
     {
-        return Ok(DummyHabits);
+        return await _context.Habits.ToListAsync();
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Habit>> CreateHabit(Habit habit)
+    {
+        _context.Habits.Add(habit);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetHabits), new { id = habit.Id }, habit);
     }
 
 }

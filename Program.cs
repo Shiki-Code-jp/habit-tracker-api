@@ -1,9 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using habit_tracker_api.Data; // ← これを追加
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// --- SQLite / EF Core の設定 ---
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=app.db"));
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
