@@ -7,11 +7,11 @@ namespace habit_tracker_api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class HabitController : ControllerBase
+public class HabitsController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public HabitController(AppDbContext context)
+    public HabitsController(AppDbContext context)
     {
         _context = context;
     }
@@ -41,7 +41,7 @@ public class HabitController : ControllerBase
         _context.Habits.Add(habit);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetHabits), new { id = habit.Id }, habit);
+        return CreatedAtAction(nameof(GetHabit), new { id = habit.Id }, habit);
     }
 
     [HttpPut("{id}")]
@@ -60,7 +60,7 @@ public class HabitController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!_context.Habits.Any(e => e.Id == id))
+            if (!await _context.Habits.AnyAsync(e => e.Id == id))
             {
                 return NotFound();
             }
