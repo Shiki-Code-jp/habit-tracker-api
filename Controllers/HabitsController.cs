@@ -41,8 +41,10 @@ public class HabitsController : ControllerBase
         var habit = new Habit
         {
             Title = dto.Title.Trim(),
-            IsCompleted = false
-
+            Category = string.IsNullOrWhiteSpace(dto.Category) ? "全般" : dto.Category.Trim(),
+            ReminderTime = dto.ReminderTime,
+            IsCompleted = false,
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Habits.Add(habit);
@@ -61,6 +63,18 @@ public class HabitsController : ControllerBase
         }
 
         habit.Title = dto.Title.Trim();
+        habit.Category = string.IsNullOrWhiteSpace(dto.Category) ? "全般" : dto.Category.Trim();
+        habit.ReminderTime = dto.ReminderTime;
+
+        if (!habit.IsCompleted && dto.IsCompleted)
+        {
+            habit.CompletedAt = DateTime.UtcNow;
+        }
+        else if (!dto.IsCompleted)
+        {
+            habit.CompletedAt = null;
+        }
+
         habit.IsCompleted = dto.IsCompleted;
 
         try
