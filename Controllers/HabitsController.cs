@@ -36,8 +36,15 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Habit>> CreateHabit(Habit habit)
+    public async Task<ActionResult<Habit>> CreateHabit(CreateHabitDto dto)
     {
+        var habit = new Habit
+        {
+            Title = dto.Title.Trim(),
+            IsCompleted = false
+
+        };
+
         _context.Habits.Add(habit);
         await _context.SaveChangesAsync();
 
@@ -45,14 +52,16 @@ public class HabitsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateHabit(int id, Habit habit)
+    public async Task<IActionResult> UpdateHabit(int id, UpdateHabitDto dto)
     {
-        if (id != habit.Id)
+        var habit = await _context.Habits.FindAsync(id);
+        if (habit == null)
         {
-            return BadRequest();
+            return NotFound();
         }
 
-        _context.Entry(habit).State = EntityState.Modified;
+        habit.Title = dto.Title.Trim();
+        habit.IsCompleted = dto.IsCompleted;
 
         try
         {
