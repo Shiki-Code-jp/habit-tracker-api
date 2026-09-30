@@ -1,10 +1,14 @@
+using System.Security.Claims;
+using habit_tracker_api.Data;
+using habit_tracker_api.DTOs;
+using habit_tracker_api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using habit_tracker_api.Data;
-using habit_tracker_api.Models;
 
 namespace habit_tracker_api.Controllers;
 
+[Authorize] // 認証が必要なエンドポイントにする
 [ApiController]
 [Route("api/[controller]")]
 public class HabitsController : ControllerBase
@@ -16,16 +20,30 @@ public class HabitsController : ControllerBase
         _context = context;
     }
 
+    // ログインユーザーの ID をトークンから取得するヘルパーメソッド
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.Parse(userIdClaim ?? "0");
+    }
+
+    // GET: api/Habits (自分の習慣のみ取得)
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Habit>>> GetHabits()
     {
-        return await _context.Habits.ToListAsync();
+        var userId = GetCurrentUserId();
+        return await _context.Habits
+            .Where(h => h.UserId == userId)
+            .ToListAsync();
     }
 
+    // GET: api/Habits/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Habit>> GetHabit(int id)
     {
-        var habit = await _context.Habits.FindAsync(id);
+        var userId = GetCurrentUserId();
+        var habit = await _context.Habits
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
 
         if (habit == null)
         {
@@ -35,16 +53,19 @@ public class HabitsController : ControllerBase
         return habit;
     }
 
+    // POST: api/Habits
     [HttpPost]
     public async Task<ActionResult<Habit>> CreateHabit(CreateHabitDto dto)
     {
+        var userId = GetCurrentUserId();
+
         var habit = new Habit
         {
-            Title = dto.Title.Trim(),
-            Category = string.IsNullOrWhiteSpace(dto.Category) ? "全般" : dto.Category.Trim(),
+            Title = dto.Title,
+            Description = dto.Description,
+            Category = dto.Category,
             ReminderTime = dto.ReminderTime,
-            IsCompleted = false,
-            CreatedAt = DateTime.UtcNow
+            UserId = userId // 自動で自分の UserId を設定
         };
 
         _context.Habits.Add(habit);
@@ -53,50 +74,43 @@ public class HabitsController : ControllerBase
         return CreatedAtAction(nameof(GetHabit), new { id = habit.Id }, habit);
     }
 
+    // PUT: api/Habits/5
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateHabit(int id, UpdateHabitDto dto)
     {
-        var habit = await _context.Habits.FindAsync(id);
+        var userId = GetCurrentUserId();
+        var habit = await _context.Habits
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
+
         if (habit == null)
         {
             return NotFound();
         }
 
-        habit.Title = dto.Title.Trim();
-        habit.Category = string.IsNullOrWhiteSpace(dto.Category) ? "全般" : dto.Category.Trim();
+        habit.Title = dto.Title;
+        habit.Description = dto.Description;
+        habit.Category = dto.Category;
+        habit.IsCompleted = dto.IsCompleted;
         habit.ReminderTime = dto.ReminderTime;
 
-        if (!habit.IsCompleted && dto.IsCompleted)
+        if (dto.IsCompleted && habit.CompletedAt == null)
         {
             habit.CompletedAt = DateTime.UtcNow;
         }
-        else if (!dto.IsCompleted)
-        {
-            habit.CompletedAt = null;
-        }
 
-        habit.IsCompleted = dto.IsCompleted;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Habits.AnyAsync(e => e.Id == id))
-            {
-                return NotFound();
-            }
-            throw;
-        }
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
+    // DELETE: api/Habits/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteHabit(int id)
     {
-        var habit = await _context.Habits.FindAsync(id);
+        var userId = GetCurrentUserId();
+        var habit = await _context.Habits
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
+
         if (habit == null)
         {
             return NotFound();

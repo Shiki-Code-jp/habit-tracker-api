@@ -9,6 +9,6 @@ public class AppDbContext : DbContext
     {
     }
 
-    // DB内の「Habits」テーブルを表す
     public DbSet<Habit> Habits => Set<Habit>();
+    public DbSet<User> Users => Set<User>();
 }
