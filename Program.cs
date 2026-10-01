@@ -11,6 +11,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// CORS 設定の追加 (Next.js からのアクセスを許可)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowNextJS", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // Next.js の開発サーバーを指定
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // JWT 認証の設定を追加
 var secretKey = builder.Configuration["Jwt:SecretKey"] ?? "super_secret_key_1234567890_must_be_long";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -64,7 +75,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+
+// CORS ミドルウェアの適用 (UseAuthentication の前に配置)
+app.UseCors("AllowNextJS");
 
 // 認証・認可ミドルウェアの適用 (順番が重要です)
 app.UseAuthentication();
